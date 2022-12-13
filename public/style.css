@@ -1,0 +1,42 @@
+body {
+  background: #0e0f18;
+  margin: auto;
+  max-width: 60vh;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+}
+
+#controlsContainer {
+  padding: 2vh;
+  height: calc(92vh - min(100vw, 60vh));
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+#controlsContainer * {
+  border: 0.2vh solid #51515d;
+  background: transparent;
+  color: #51515d;
+  border-radius: 2vh;
+}
+
+#dial {
+  width: 15vh;
+  height: 100%;
+  background-image: url("/img/line.png");
+  background-repeat: repeat;
+  background-size: 40vh;
+}
+
+#wButton {
+  width: 24vh;
+  height: 12vh;
+}
+
+.down {
+  background: #51515d33 !important;
+}

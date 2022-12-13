@@ -1,0 +1,12 @@
+{
+  "name": "seattle",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "*",
+    "socket.io": "*",
+    "matter-js": "*",
+    "poly-decomp": "*"
+  }
+}
