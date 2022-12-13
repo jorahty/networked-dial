@@ -14,6 +14,8 @@ module.exports = (http) => {
 
   const engine = Engine.create({ enableSleeping: true });
   const world = engine.world;
+  world.gravity.scale *= 0.4;
+  world.score = { left: 0, right: 0 };
 
   // run the engine
   const runner = Runner.create();
@@ -68,14 +70,13 @@ module.exports = (http) => {
   }
 
   // add a ball
-  Composite.add(dynamic,
-    Bodies.fromVertices(0, -500,
-      Vertices.fromPath(shapes['ball']), {
-      shape: 'ball',
-      restitution: 0.9,
-      mass: 0.008,
-    })
-  );
+  const ball = Bodies.fromVertices(0, -500,
+    Vertices.fromPath(shapes['ball']), {
+    shape: 'ball',
+    restitution: 0.8,
+    mass: 0.008,
+  });
+  Composite.add(dynamic, ball);
 
   io.on('connection', socket => {
     // create player
@@ -108,6 +109,11 @@ module.exports = (http) => {
       if (code === 'a') {
         Body.setAngularVelocity(player, 0);
         Body.setAngle(player, player.initialAngle + angle);
+        return;
+      };
+      if (code === 's') {
+        Body.setAngularVelocity(player, 0);
+        Body.setAngle(player, player.angle + angle);
         return;
       };
       const control = code.toLowerCase();
@@ -144,6 +150,28 @@ module.exports = (http) => {
 
     io.volatile.emit('update', gamestate);
   }, 1000 / 60);
+
+  // listen for score
+  // emit 'score' with new score
+  Events.on(engine, 'afterUpdate', () => {
+    const goalX = 750;
+    if (ball.position.x > goalX || ball.position.x < -goalX) {
+
+      const side = (ball.position.x < 0) ? 'left' : 'right';
+
+      world.score[side]++;
+
+      io.emit('score', world.score);
+
+      Body.setPosition(ball, { x: 0, y: 0 });
+      Body.setVelocity(ball, { x: 0, y: 0 });
+      return;
+    }
+
+    if (ball.position.x > -50 && ball.position.x < 50 && ball.position.y > 390) {
+      ball.force = { x: 0, y: -0.0008 };
+    }
+  });
 }
 
 // extract minimum info needed for client to render
@@ -153,14 +181,10 @@ module.exports = (http) => {
 // what info is needed for rendering each body)
 function renderInfo(object) {
   const objects = [].concat(object);
-  return objects.map(body => {
-    const bodyInfo = {
-      id: body.id,
-      shape: body.shape,
-      angle: body.angle,
-      position: body.position,
-    };
-    // if (body.shape === 'ball') delete bodyInfo.angle;
-    return bodyInfo;
-  });
+  return objects.map(body => ({
+    id: body.id,
+    shape: body.shape,
+    angle: body.angle,
+    position: body.position,
+  }));
 }

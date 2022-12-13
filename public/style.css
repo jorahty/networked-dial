@@ -1,7 +1,40 @@
+/* lock screen in place */
+html,
+body { height: 100%; margin: 0; }
+body {
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* prevent selections */
+html {
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: none;
+}
+
 body {
   background: #0e0f18;
   margin: auto;
   max-width: 60vh;
+}
+
+#score {
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  width: min(100vw, 60vh);
+  font-weight: 800;
+  font-family: system-ui;
+  padding: 1vh;
+  box-sizing: border-box;
 }
 
 canvas {
@@ -27,7 +60,7 @@ canvas {
 #dial {
   width: 15vh;
   height: 100%;
-  background-image: url("/img/line.png");
+  background-image: url("/assets/line.png");
   background-repeat: repeat;
   background-size: 40vh;
 }

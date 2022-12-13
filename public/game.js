@@ -9,8 +9,27 @@ const socket = io();
 function App() {
   return (
     <div>
+      <Score />
       <MainCanvas />
       <Controls />
+    </div>
+  );
+}
+
+function Score() {
+  const [score, setScore] = useState({ left: 0, right: 0 });
+  const audio = new Audio('/assets/yeah.mp3');
+  audio.load();
+
+  socket.on('score', score => {
+    setScore(score);
+    audio.cloneNode().play();
+  });
+
+  return (
+    <div id='score'>
+      <div>{score.left}</div>
+      <div>{score.right}</div>
     </div>
   );
 }
@@ -54,7 +73,15 @@ function renderToCanvas(container) {
       width: 800,
       height: 850,
       hasBounds: true,
+      wireframes: false,
     },
+  });
+
+  // set zoom
+  const zoom = 500;
+  Render.lookAt(render, {
+    min: { x: -zoom, y: -zoom },
+    max: { x: zoom, y: zoom },
   });
 
   // add terrain
@@ -62,8 +89,22 @@ function renderToCanvas(container) {
     Bodies.fromVertices(0, 0,
       Vertices.fromPath(shapes['terrain']), {
         isStatic: true,
+        render: {
+          fillStyle: '#51515d',
+          strokeStyle: '#51515d',
+          lineWidth: 1,
+        },
       }
     )
+  );
+
+  // add bounce pad
+  Composite.add(world,
+    Bodies.rectangle(0, 450, 100, 20, {
+      render: {
+        fillStyle: '#0ff',
+      },
+    })
   );
 
   // create composite for dynamic bodies managed by server
@@ -122,18 +163,28 @@ function renderToCanvas(container) {
     if (Vector.magnitude(delta) < 1) return; // don't bother
 
     // on this update, only move camera 10% of the way
-    Bounds.translate(render.bounds, Vector.mult(delta, 0.1));
+    let move = Vector.mult(delta, 0.1);
+    move.y = 0;
+    Bounds.translate(render.bounds, move);
   }
 }
 
 function Controls() {
   function handleWDown(e) {
-    e.target.className = 'down';
+    if (e.key === undefined) {
+      e.target.className = 'down';
+    } else if (e.key !== 'w') {
+      return;
+    }
     socket.volatile.emit('input', 'w');
   }
 
   function handleWUp(e) {
-    e.target.className = '';
+    if (e.key === undefined) {
+      e.target.className = '';
+    } else if (e.key !== 'w') {
+      return;
+    }
     socket.volatile.emit('input', 'W');
   }
 
@@ -153,7 +204,7 @@ function Controls() {
     if (e.pointerId === dialPointerId.current) {
       angleCount.current++;
       const displacement = e.clientY - pointerInitialPosition.current;
-      const angle = Math.round(displacement * 0.01 * 100) / 100
+      const angle = Math.round(displacement * 0.04 * 100) / 100;
       dial.style.backgroundPositionY = `${displacement * 1.15}%`;
       if ( angleCount.current % 1 !== 0) return; // this reduces the send rate
       socket.volatile.emit('input', 'a', angle);
@@ -166,12 +217,23 @@ function Controls() {
     }
   }
 
+  function handleWheel(e) {
+    const angle = e.deltaY * 0.006;
+    socket.volatile.emit('input', 's', angle);
+  }
+
   useEffect(() => {
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('wheel', handleWheel);
+    window.addEventListener('keydown', handleWDown);
+    window.addEventListener('keyup', handleWUp);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('keydown', handleWDown);
+      window.removeEventListener('keyup', handleWUp);
     };
   }, []);
 
